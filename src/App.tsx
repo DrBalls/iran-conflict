@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { fetchIntelligenceReport, type IntelligenceReport } from './services/intelligence';
 import ConflictMap from './components/Map';
-import { Activity, AlertTriangle, RefreshCw, Shield, Target, Radio, Clock, Map as MapIcon } from 'lucide-react';
-import { format } from 'date-fns';
+import { Activity, AlertTriangle, RefreshCw, Shield, Target, Radio, Clock, Map as MapIcon, Calendar, ChevronDown } from 'lucide-react';
+import { format, subDays } from 'date-fns';
 
 export default function App() {
   const [report, setReport] = useState<IntelligenceReport | null>(null);
@@ -10,11 +10,13 @@ export default function App() {
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
   const [filter, setFilter] = useState<string>('ALL');
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
 
-  const loadData = async () => {
+  const loadData = async (date?: Date) => {
     setLoading(true);
     setExpandedEventId(null);
-    const data = await fetchIntelligenceReport();
+    const data = await fetchIntelligenceReport(date);
     setReport(data);
     setLastRefreshed(new Date());
     setLoading(false);
@@ -22,10 +24,18 @@ export default function App() {
 
   useEffect(() => {
     loadData();
-    // Auto-refresh every 5 minutes
-    const interval = setInterval(loadData, 5 * 60 * 1000);
+    // Auto-refresh every 5 minutes only if viewing live data
+    const interval = setInterval(() => {
+      if (!selectedDate) loadData();
+    }, 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [selectedDate]);
+
+  const handleDateSelect = (date: Date | null) => {
+    setSelectedDate(date);
+    setShowHistory(false);
+    loadData(date || undefined);
+  };
 
   const getAlertColor = (level?: string) => {
     switch (level) {
@@ -40,14 +50,23 @@ export default function App() {
     filter === 'ALL' || event.type === filter
   ) || [];
 
+  // Generate last 7 days for history
+  const historyDates = Array.from({ length: 7 }, (_, i) => subDays(new Date(), i + 1));
+
   return (
     <div className="dashboard-grid">
       {/* Header */}
       <header className="col-span-3 bg-[#0a0a0a] border-b border-[#333] flex items-center justify-between px-4 relative z-50">
         <div className="flex items-center gap-3">
-          <div className="live-indicator"></div>
-          <h1 className="font-mono text-lg tracking-widest text-white font-bold">
-            IRAN CONFLICT MONITOR <span className="text-[#666] text-xs ml-2">v2.1.0</span>
+          <div className={`live-indicator ${selectedDate ? '!bg-blue-500 !animate-none' : ''}`}></div>
+          <h1 className="font-mono text-lg tracking-widest text-white font-bold flex items-center gap-2">
+            IRAN CONFLICT MONITOR 
+            <span className="text-[#666] text-xs font-normal">v2.2.0</span>
+            {selectedDate && (
+              <span className="text-blue-500 text-xs border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 rounded">
+                ARCHIVE: {format(selectedDate, 'yyyy-MM-dd')}
+              </span>
+            )}
           </h1>
         </div>
         
@@ -56,6 +75,44 @@ export default function App() {
             <Clock size={14} />
             <span>{format(new Date(), 'HH:mm:ss')} UTC</span>
           </div>
+          
+          {/* History Dropdown */}
+          <div className="relative">
+            <button 
+              onClick={() => setShowHistory(!showHistory)}
+              className={`flex items-center gap-2 hover:text-white transition-colors ${showHistory ? 'text-white' : ''}`}
+            >
+              <Calendar size={14} />
+              <span>HISTORY</span>
+              <ChevronDown size={12} className={`transition-transform ${showHistory ? 'rotate-180' : ''}`} />
+            </button>
+            
+            {showHistory && (
+              <div className="absolute top-full right-0 mt-2 w-48 bg-[#1a1a1a] border border-[#333] rounded shadow-xl py-1 z-50">
+                <button
+                  onClick={() => handleDateSelect(null)}
+                  className={`w-full text-left px-4 py-2 hover:bg-[#333] flex items-center justify-between ${!selectedDate ? 'text-red-500 font-bold' : 'text-gray-400'}`}
+                >
+                  <span>LIVE FEED</span>
+                  {!selectedDate && <div className="w-1.5 h-1.5 rounded-full bg-red-500" />}
+                </button>
+                <div className="h-px bg-[#333] my-1" />
+                {historyDates.map((date) => (
+                  <button
+                    key={date.toISOString()}
+                    onClick={() => handleDateSelect(date)}
+                    className={`w-full text-left px-4 py-2 hover:bg-[#333] flex items-center justify-between ${
+                      selectedDate?.toDateString() === date.toDateString() ? 'text-blue-500 font-bold' : 'text-gray-400'
+                    }`}
+                  >
+                    <span>{format(date, 'MMM dd, yyyy')}</span>
+                    {selectedDate?.toDateString() === date.toDateString() && <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="flex items-center gap-2 relative group cursor-help">
             <Shield size={14} className={getAlertColor(report?.alertLevel)} />
             <span className={getAlertColor(report?.alertLevel)}>
@@ -86,7 +143,7 @@ export default function App() {
             </div>
           </div>
           <button 
-            onClick={loadData}
+            onClick={() => loadData(selectedDate || undefined)}
             disabled={loading}
             className="flex items-center gap-2 hover:text-white transition-colors disabled:opacity-50"
           >

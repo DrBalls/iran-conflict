@@ -26,18 +26,23 @@ export interface IntelligenceReport {
   lastUpdated: string;
 }
 
-export async function fetchIntelligenceReport(): Promise<IntelligenceReport> {
+export async function fetchIntelligenceReport(targetDate?: Date): Promise<IntelligenceReport> {
   try {
     const model = "gemini-3-flash-preview";
+    
+    const dateStr = targetDate ? targetDate.toISOString().split('T')[0] : null;
+    const timeContext = dateStr ? `that occurred specifically on ${dateStr}` : 'in the last 24-48 hours';
+    const contextType = dateStr ? 'historical' : 'real-time';
+
     const prompt = `
       Act as a military intelligence analyst. 
-      Search for the very latest real-time news and updates regarding conflict, tensions, or military activities involving Iran.
+      Search for ${contextType} news and updates regarding conflict, tensions, or military activities involving Iran ${timeContext}.
       
       Analyze the search results and generate a structured JSON report.
       
       The report MUST strictly follow this JSON schema:
       {
-        "summary": "A concise 2-3 sentence summary of the current situation.",
+        "summary": "A concise 2-3 sentence summary of the situation ${timeContext}.",
         "alertLevel": "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",
         "events": [
           {
@@ -53,13 +58,13 @@ export async function fetchIntelligenceReport(): Promise<IntelligenceReport> {
         "stats": [
           {
             "label": "Key metric (e.g. 'Reported Casualties', 'Troop Movements', 'Sanctions')",
-            "value": "Current number or status",
+            "value": "Number or status ${timeContext}",
             "trend": "UP" | "DOWN" | "STABLE"
           }
         ]
       }
 
-      Focus on the last 24-48 hours. If no major active conflict, report on diplomatic tensions or proxy activities.
+      If no major active conflict occurred ${timeContext}, report on diplomatic tensions or proxy activities from that time.
       Ensure coordinates are provided for every event (approximate center of city/region is fine).
       Return ONLY the JSON object.
     `;
