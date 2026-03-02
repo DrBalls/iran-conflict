@@ -28,10 +28,10 @@ interface MapProps {
   }>;
 }
 
-function MapController({ events }: { events: MapProps['events'] }) {
+function MapRecenter({ events }: { events: MapProps['events'] }) {
   const map = useMap();
 
-  useEffect(() => {
+  const fitToMarkers = () => {
     if (events.length === 0) return;
 
     const coordinates = events
@@ -47,9 +47,31 @@ function MapController({ events }: { events: MapProps['events'] }) {
         duration: 1.5
       });
     }
+  };
+
+  useEffect(() => {
+    fitToMarkers();
   }, [events, map]);
 
-  return null;
+  return (
+    <div className="leaflet-bottom leaflet-right">
+      <div className="leaflet-control leaflet-bar !border-0">
+        <a 
+          href="#" 
+          role="button" 
+          title="Fit to markers"
+          onClick={(e) => {
+            e.preventDefault();
+            fitToMarkers();
+          }}
+          className="!bg-[#1a1a1a] !text-white !border !border-[#333] hover:!bg-[#333] flex items-center justify-center"
+          style={{ width: '30px', height: '30px', lineHeight: '30px' }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+        </a>
+      </div>
+    </div>
+  );
 }
 
 export default function ConflictMap({ events }: MapProps) {
@@ -129,7 +151,7 @@ export default function ConflictMap({ events }: MapProps) {
             )
           ))}
         </MarkerClusterGroup>
-        <MapController events={events} />
+        <MapRecenter events={events} />
       </MapContainer>
       
       {/* Map Overlay UI */}
