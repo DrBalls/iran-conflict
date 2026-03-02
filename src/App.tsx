@@ -43,7 +43,7 @@ export default function App() {
   return (
     <div className="dashboard-grid">
       {/* Header */}
-      <header className="col-span-3 bg-[#0a0a0a] border-b border-[#333] flex items-center justify-between px-4">
+      <header className="col-span-3 bg-[#0a0a0a] border-b border-[#333] flex items-center justify-between px-4 relative z-50">
         <div className="flex items-center gap-3">
           <div className="live-indicator"></div>
           <h1 className="font-mono text-lg tracking-widest text-white font-bold">
@@ -56,11 +56,34 @@ export default function App() {
             <Clock size={14} />
             <span>{format(new Date(), 'HH:mm:ss')} UTC</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 relative group cursor-help">
             <Shield size={14} className={getAlertColor(report?.alertLevel)} />
             <span className={getAlertColor(report?.alertLevel)}>
               DEFCON: {report?.alertLevel || 'ANALYZING...'}
             </span>
+            
+            {/* DEFCON Definitions Tooltip */}
+            <div className="absolute top-full right-0 mt-2 w-64 bg-[#1a1a1a] border border-[#333] p-3 rounded shadow-xl opacity-0 group-hover:opacity-100 transition-opacity z-50">
+              <h4 className="text-white font-bold mb-2 border-b border-[#333] pb-1">THREAT LEVELS</h4>
+              <div className="space-y-2">
+                <div className="flex items-start gap-2">
+                  <span className="text-red-500 font-bold min-w-[60px]">CRITICAL</span>
+                  <span className="text-[#888]">Imminent/ongoing major conflict. Max readiness.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-orange-500 font-bold min-w-[60px]">HIGH</span>
+                  <span className="text-[#888]">High tension, mobilization, or significant skirmishes.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-yellow-500 font-bold min-w-[60px]">MEDIUM</span>
+                  <span className="text-[#888]">Increased diplomatic tension or proxy activity.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-green-500 font-bold min-w-[60px]">LOW</span>
+                  <span className="text-[#888]">Normal monitoring. No significant threats.</span>
+                </div>
+              </div>
+            </div>
           </div>
           <button 
             onClick={loadData}
