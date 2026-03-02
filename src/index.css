@@ -6,15 +6,23 @@
 }
 
 :root {
+  --bg: #E4E3E0;
+  --ink: #141414;
+  --line: #141414;
+  --f-mono: 'JetBrains Mono', monospace;
+  --f-sans: 'Inter', sans-serif;
+  
+  /* Dark mode overrides for a "War Room" feel */
   --bg-dark: #0a0a0a;
+  --ink-dark: #e5e5e5;
   --line-dark: #333333;
   --accent: #ff3333;
 }
 
 body {
   background-color: var(--bg-dark);
-  color: #e5e5e5;
-  font-family: var(--font-sans);
+  color: var(--ink-dark);
+  font-family: var(--f-sans);
 }
 
 /* Grid Layout Utilities */
@@ -36,7 +44,7 @@ body {
 
 /* Header Styles */
 .panel-header {
-  font-family: var(--font-mono);
+  font-family: var(--f-mono);
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -67,20 +75,33 @@ body {
 }
 
 .data-label {
-  font-family: var(--font-mono);
+  font-family: var(--f-mono);
   color: #666;
   font-size: 11px;
 }
 
 .data-value {
-  font-family: var(--font-sans);
+  font-family: var(--f-sans);
 }
 
-/* Map Container */
-.map-container {
-  width: 100%;
-  height: 100%;
-  background: #111;
+/* Leaflet Popup Overrides */
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: #1a1a1a !important;
+  color: #e5e5e5 !important;
+  border: 1px solid #333;
+  border-radius: 4px !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+  color: #666 !important;
+}
+
+.leaflet-container a.leaflet-popup-close-button:hover {
+  color: #fff !important;
 }
 
 /* Blinking Indicator */
@@ -100,24 +121,27 @@ body {
   100% { opacity: 1; }
 }
 
-/* Leaflet Overrides */
-.leaflet-container {
-  background: #0a0a0a !important;
-}
-.custom-popup .leaflet-popup-content-wrapper {
-  background: #1a1a1a;
-  color: #e5e5e5;
-  border: 1px solid #333;
-  border-radius: 4px;
-}
-.custom-popup .leaflet-popup-tip {
-  background: #1a1a1a;
-}
-.custom-popup .leaflet-popup-close-button {
-  color: #666 !important;
+/* Marker Cluster Styles */
+.cluster-icon {
+  background-color: #333;
+  border: 1px solid #666;
+  border-radius: 50%;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--f-mono);
+  font-size: 12px;
+  font-weight: bold;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  width: 33px;
+  height: 33px;
 }
 
-/* Scrollbar */
+.cluster-icon:hover {
+  background-color: #444;
+  border-color: #888;
+}
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

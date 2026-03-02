@@ -9,11 +9,11 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
   const [filter, setFilter] = useState<string>('ALL');
-  const [expandedEventIndex, setExpandedEventIndex] = useState<number | null>(null);
+  const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
 
   const loadData = async () => {
     setLoading(true);
-    setExpandedEventIndex(null);
+    setExpandedEventId(null);
     const data = await fetchIntelligenceReport();
     setReport(data);
     setLastRefreshed(new Date());
@@ -36,7 +36,7 @@ export default function App() {
     }
   };
 
-  const filteredEvents = report?.events.filter(event => 
+  const filteredEvents = report?.events?.filter(event => 
     filter === 'ALL' || event.type === filter
   ) || [];
 
@@ -107,12 +107,12 @@ export default function App() {
               {'>'} ANALYZING SATELLITE DATA...
             </div>
           ) : (
-            filteredEvents.map((event, i) => (
+            filteredEvents.map((event) => (
               <div 
-                key={i} 
-                onClick={() => setExpandedEventIndex(expandedEventIndex === i ? null : i)}
+                key={event.id} 
+                onClick={() => setExpandedEventId(expandedEventId === event.id ? null : event.id)}
                 className={`p-4 border-b border-[#333] transition-colors cursor-pointer group ${
-                  expandedEventIndex === i ? 'bg-[#1a1a1a]' : 'hover:bg-[#111]'
+                  expandedEventId === event.id ? 'bg-[#1a1a1a]' : 'hover:bg-[#111]'
                 }`}
               >
                 <div className="flex justify-between items-start mb-1">
@@ -128,12 +128,12 @@ export default function App() {
                 <h3 className="text-sm font-medium text-gray-200 mb-1 leading-tight group-hover:text-white">
                   {event.title}
                 </h3>
-                <p className={`text-xs text-[#888] mb-2 ${expandedEventIndex === i ? '' : 'line-clamp-2'}`}>
+                <p className={`text-xs text-[#888] mb-2 ${expandedEventId === event.id ? '' : 'line-clamp-2'}`}>
                   {event.description}
                 </p>
                 
                 {/* Expanded Details */}
-                {expandedEventIndex === i && (
+                {expandedEventId === event.id && (
                   <div className="mt-3 pt-3 border-t border-[#333] animate-in fade-in slide-in-from-top-1 duration-200">
                     <h4 className="text-[10px] font-mono text-[#666] uppercase mb-1">Analysis</h4>
                     <p className="text-xs text-gray-400 leading-relaxed">
@@ -199,7 +199,7 @@ export default function App() {
         </div>
 
         <div className="flex-1">
-          {report?.stats.map((stat, i) => (
+          {report?.stats?.map((stat, i) => (
             <div key={i} className="data-row">
               <div className="data-label">{stat.label}</div>
               <div className="flex items-center justify-between">

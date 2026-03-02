@@ -9,6 +9,7 @@ export interface IntelligenceReport {
   summary: string;
   alertLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   events: Array<{
+    id: string;
     title: string;
     location: string;
     coordinates?: [number, number]; // Lat, Lng
@@ -86,8 +87,16 @@ export async function fetchIntelligenceReport(): Promise<IntelligenceReport> {
       throw new Error("Invalid JSON response from intelligence service");
     }
 
+    // Generate stable IDs for events
+    const eventsWithIds = data.events?.map((event: any, index: number) => ({
+      ...event,
+      id: `${event.timestamp?.replace(/[^a-zA-Z0-9]/g, '') || Date.now()}-${index}`
+    })) || [];
+
     return {
       ...data,
+      events: eventsWithIds,
+      stats: data.stats || [],
       lastUpdated: new Date().toISOString(),
     };
   } catch (error) {
