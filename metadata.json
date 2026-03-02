@@ -1,0 +1,5 @@
+{
+  "name": "Iran Conflict Monitor",
+  "description": "Real-time dashboard tracking conflict updates involving Iran using AI-powered news analysis and mapping.",
+  "requestFramePermissions": []
+}
