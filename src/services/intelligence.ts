@@ -17,6 +17,11 @@ export interface IntelligenceReport {
     type: 'MILITARY' | 'DIPLOMATIC' | 'CIVIL' | 'CYBER';
     description: string;
     detailedAnalysis?: string;
+    video?: {
+      url: string;
+      thumbnail: string;
+      title: string;
+    };
   }>;
   stats: Array<{
     label: string;
@@ -52,7 +57,12 @@ export async function fetchIntelligenceReport(targetDate?: Date): Promise<Intell
             "timestamp": "YYYY-MM-DD HH:MM", // Approximate time of event
             "type": "MILITARY" | "DIPLOMATIC" | "CIVIL" | "CYBER",
             "description": "Brief details (1 sentence)",
-            "detailedAnalysis": "In-depth analysis of the event, context, and potential implications (2-3 sentences)."
+            "detailedAnalysis": "In-depth analysis of the event, context, and potential implications (2-3 sentences).",
+            "video": {
+              "url": "URL to a relevant news video (YouTube or news site) if available, otherwise null",
+              "thumbnail": "URL to a thumbnail image for the video (or a relevant news image), otherwise null",
+              "title": "Title of the video"
+            }
           }
         ],
         "stats": [

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchIntelligenceReport, type IntelligenceReport } from './services/intelligence';
 import ConflictMap from './components/Map';
-import { Activity, AlertTriangle, RefreshCw, Shield, Target, Radio, Clock, Map as MapIcon, Calendar, ChevronDown } from 'lucide-react';
+import { Activity, AlertTriangle, RefreshCw, Shield, Target, Radio, Clock, Map as MapIcon, Calendar, ChevronDown, PlayCircle, ExternalLink } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 
 export default function App() {
@@ -12,6 +12,8 @@ export default function App() {
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
+  const [hoverPosition, setHoverPosition] = useState<{top: number} | null>(null);
 
   const loadData = async (date?: Date) => {
     setLoading(true);
@@ -56,7 +58,7 @@ export default function App() {
   return (
     <div className="dashboard-grid">
       {/* Header */}
-      <header className="col-span-3 bg-[#0a0a0a] border-b border-[#333] flex items-center justify-between px-4 relative z-50">
+      <header className="col-span-3 bg-[#0a0a0a] border-b border-[#333] flex items-center justify-between px-4 relative z-[2000]">
         <div className="flex items-center gap-3">
           <div className={`live-indicator ${selectedDate ? '!bg-blue-500 !animate-none' : ''}`}></div>
           <h1 className="font-mono text-lg tracking-widest text-white font-bold flex items-center gap-2">
@@ -154,7 +156,7 @@ export default function App() {
       </header>
 
       {/* Left Panel: Events Feed */}
-      <aside className="grid-panel border-r border-[#333] flex flex-col">
+      <aside className="grid-panel border-r border-[#333] flex flex-col relative z-20">
         <div className="panel-header flex-col items-start gap-2 !h-auto">
           <div className="flex items-center justify-between w-full">
             <span className="flex items-center gap-2"><Activity size={14} /> INTELLIGENCE FEED</span>
@@ -179,7 +181,7 @@ export default function App() {
           </div>
         </div>
         
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto relative">
           {loading && !report ? (
             <div className="p-4 text-xs font-mono text-[#666] animate-pulse">
               {'>'} ESTABLISHING SECURE CONNECTION...<br/>
@@ -191,7 +193,13 @@ export default function App() {
               <div 
                 key={event.id} 
                 onClick={() => setExpandedEventId(expandedEventId === event.id ? null : event.id)}
-                className={`p-4 border-b border-[#333] transition-colors cursor-pointer group ${
+                onMouseEnter={(e) => {
+                  setHoveredEventId(event.id);
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setHoverPosition({ top: rect.top });
+                }}
+                onMouseLeave={() => setHoveredEventId(null)}
+                className={`p-4 border-b border-[#333] transition-colors cursor-pointer group relative ${
                   expandedEventId === event.id ? 'bg-[#1a1a1a]' : 'hover:bg-[#111]'
                 }`}
               >
@@ -216,15 +224,50 @@ export default function App() {
                 {expandedEventId === event.id && (
                   <div className="mt-3 pt-3 border-t border-[#333] animate-in fade-in slide-in-from-top-1 duration-200">
                     <h4 className="text-[10px] font-mono text-[#666] uppercase mb-1">Analysis</h4>
-                    <p className="text-xs text-gray-400 leading-relaxed">
+                    <p className="text-xs text-gray-400 leading-relaxed mb-3">
                       {event.detailedAnalysis || "No detailed analysis available."}
                     </p>
+                    
+                    {/* Video Section in Expanded View */}
+                    {event.video && event.video.url && (
+                      <div className="mt-2">
+                        <h4 className="text-[10px] font-mono text-[#666] uppercase mb-1 flex items-center gap-1">
+                          <PlayCircle size={10} /> Related Footage
+                        </h4>
+                        <a 
+                          href={event.video.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="block relative group/video overflow-hidden rounded border border-[#333]"
+                        >
+                          {event.video.thumbnail ? (
+                            <img 
+                              src={event.video.thumbnail} 
+                              alt={event.video.title} 
+                              className="w-full h-24 object-cover opacity-60 group-hover/video:opacity-100 transition-opacity"
+                              referrerPolicy="no-referrer"
+                            />
+                          ) : (
+                            <div className="w-full h-24 bg-[#000] flex items-center justify-center">
+                              <PlayCircle size={24} className="text-[#666]" />
+                            </div>
+                          )}
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover/video:bg-transparent transition-colors">
+                            <PlayCircle size={24} className="text-white drop-shadow-md" />
+                          </div>
+                          <div className="absolute bottom-0 left-0 right-0 bg-black/80 p-1 text-[9px] text-white truncate px-2">
+                            {event.video.title || "Watch Video"}
+                          </div>
+                        </a>
+                      </div>
+                    )}
                   </div>
                 )}
 
                 <div className="flex items-center gap-1 text-[10px] text-[#666] font-mono mt-2">
                   <MapIcon size={10} />
                   {event.location.toUpperCase()}
+                  {event.video && <PlayCircle size={10} className="ml-2 text-blue-500" />}
                 </div>
               </div>
             ))
@@ -237,6 +280,37 @@ export default function App() {
           )}
         </div>
       </aside>
+
+      {/* Hover Preview Card (Fixed Position) */}
+      {hoveredEventId && hoverPosition && (
+        (() => {
+          const event = filteredEvents.find(e => e.id === hoveredEventId);
+          if (!event || expandedEventId === event.id) return null;
+          
+          return (
+            <div 
+              className="fixed w-72 bg-[#1a1a1a] border border-[#333] p-3 rounded shadow-2xl z-[2000] pointer-events-none animate-in fade-in slide-in-from-left-2 duration-150"
+              style={{ 
+                top: hoverPosition.top, 
+                left: '325px' // 320px sidebar + 5px gap
+              }}
+            >
+              <h4 className="text-xs font-bold text-white mb-2 border-b border-[#333] pb-1">
+                {event.title}
+              </h4>
+              <p className="text-xs text-gray-300 leading-relaxed mb-2">
+                {event.description}
+              </p>
+              {event.video && (
+                <div className="flex items-center gap-2 text-[10px] text-blue-400 bg-blue-900/20 p-1.5 rounded border border-blue-900/30">
+                  <PlayCircle size={12} />
+                  <span>Video footage available</span>
+                </div>
+              )}
+            </div>
+          );
+        })()
+      )}
 
       {/* Center Panel: Map */}
       <main className="grid-panel relative bg-black">
