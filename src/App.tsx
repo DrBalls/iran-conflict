@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { fetchIntelligenceReport, type IntelligenceReport } from './services/intelligence';
 import ConflictMap from './components/Map';
 import { Activity, AlertTriangle, RefreshCw, Shield, Target, Radio, Clock, Map as MapIcon, Calendar, ChevronDown, PlayCircle, ExternalLink } from 'lucide-react';
@@ -14,6 +14,27 @@ export default function App() {
   const [showHistory, setShowHistory] = useState(false);
   const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
   const [hoverPosition, setHoverPosition] = useState<{top: number} | null>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const clearHoverTimeout = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+  };
+
+  const handleMouseEnter = (event: any, id: string) => {
+    clearHoverTimeout();
+    setHoveredEventId(id);
+    const rect = event.currentTarget.getBoundingClientRect();
+    setHoverPosition({ top: rect.top });
+  };
+
+  const handleMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredEventId(null);
+    }, 100); // Small delay to allow moving to the preview card
+  };
 
   const loadData = async (date?: Date) => {
     setLoading(true);
@@ -193,12 +214,8 @@ export default function App() {
               <div 
                 key={event.id} 
                 onClick={() => setExpandedEventId(expandedEventId === event.id ? null : event.id)}
-                onMouseEnter={(e) => {
-                  setHoveredEventId(event.id);
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  setHoverPosition({ top: rect.top });
-                }}
-                onMouseLeave={() => setHoveredEventId(null)}
+                onMouseEnter={(e) => handleMouseEnter(e, event.id)}
+                onMouseLeave={handleMouseLeave}
                 className={`p-4 border-b border-[#333] transition-colors cursor-pointer group relative ${
                   expandedEventId === event.id ? 'bg-[#1a1a1a]' : 'hover:bg-[#111]'
                 }`}
@@ -289,7 +306,9 @@ export default function App() {
           
           return (
             <div 
-              className="fixed w-72 bg-[#1a1a1a] border border-[#333] p-3 rounded shadow-2xl z-[2000] pointer-events-none animate-in fade-in slide-in-from-left-2 duration-150"
+              onMouseEnter={clearHoverTimeout}
+              onMouseLeave={handleMouseLeave}
+              className="fixed w-72 bg-[#1a1a1a] border border-[#333] p-3 rounded shadow-2xl z-[2000] animate-in fade-in slide-in-from-left-2 duration-150"
               style={{ 
                 top: hoverPosition.top, 
                 left: '325px' // 320px sidebar + 5px gap
@@ -298,14 +317,20 @@ export default function App() {
               <h4 className="text-xs font-bold text-white mb-2 border-b border-[#333] pb-1">
                 {event.title}
               </h4>
-              <p className="text-xs text-gray-300 leading-relaxed mb-2">
+              <p className="text-xs text-gray-300 leading-relaxed mb-3">
                 {event.description}
               </p>
-              {event.video && (
-                <div className="flex items-center gap-2 text-[10px] text-blue-400 bg-blue-900/20 p-1.5 rounded border border-blue-900/30">
-                  <PlayCircle size={12} />
-                  <span>Video footage available</span>
-                </div>
+              {event.video && event.video.url && (
+                <a 
+                  href={event.video.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-[10px] text-blue-400 bg-blue-900/20 p-2 rounded border border-blue-900/30 hover:bg-blue-900/40 transition-colors group/link"
+                >
+                  <PlayCircle size={14} />
+                  <span className="flex-1 truncate">{event.video.title || "Watch Video Footage"}</span>
+                  <ExternalLink size={10} className="opacity-0 group-hover/link:opacity-100 transition-opacity" />
+                </a>
               )}
             </div>
           );
